@@ -1,0 +1,44 @@
+<div class="dashboard-wrapper">
+    
+    <!-- MENU LATERAL PREMIUM -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            Krauss<span class="dot-tech">.</span>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <!-- Altere os IDs e nomes conforme as abas que você usa na Krauss -->
+            <button class="menu-item active" onclick="mudarAba('dashboard')">
+                <span class="menu-icon">📊</span> Panel
+            </button>
+            <button class="menu-item" onclick="mudarAba('lancamentos')">
+                <span class="menu-icon">💸</span> Lançamentos
+            </button>
+            <button class="menu-item" onclick="mudarAba('integracoes')">
+                <span class="menu-icon">🔌</span> Integrações
+            </button>
+        </nav>
+
+        <button class="btn-sair-sidebar" onclick="fazerLogout()">Sair</button>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL (DASHBOARD) -->
+    <main class="main-content">
+        
+        <!-- Cabeçalho Interno -->
+        <header class="content-header">
+            <h2>Visão Geral</h2>
+            <div class="filtro-container">
+                <select id="filtro-mes">
+                    <option value="todos">Todos os Meses</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Suas abas e o Bento Grid entram aqui dentro -->
+        <div id="aba-dashboard" class="tab-content active-tab">
+            <!-- Seu Bento Grid e Gráficos da Krauss -->
+        </div>
+
+    </main>
+</div>
