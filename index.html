@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krauss - Sistema Financeiro</title>
+    <!-- Fonte Inter para um visual moderno e limpo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ESTRUTURA GERAL (SIDEBAR + CONTEÚDO) -->
+    <div class="dashboard-wrapper">
+        
+        <!-- MENU LATERAL PREMIUM -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                Krauss<span class="dot-tech">.</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <button class="menu-item active" onclick="mudarAba('dashboard', this)">
+                    <span class="menu-icon">📊</span> <span>Painel</span>
+                </button>
+                <button class="menu-item" onclick="mudarAba('lancamentos', this)">
+                    <span class="menu-icon">💸</span> <span>Lançamentos</span>
+                </button>
+                <button class="menu-item" onclick="mudarAba('integracoes', this)">
+                    <span class="menu-icon">🔌</span> <span>Integrações</span>
+                </button>
+            </nav>
+
+            <!-- Botão de Sair corrigido para chamar o logoff real -->
+            <button class="btn-sair-sidebar" onclick="fazerLogout()">Sair</button>
+        </aside>
+
+        <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            
+            <!-- Cabeçalho Interno Dinâmico -->
+            <header class="content-header">
+                <h2 id="titulo-pagina">Visão Geral</h2>
+                <div class="filtro-container">
+                    <select id="filtro-mes">
+                        <option value="atual">Mês Atual</option>
+                        <option value="anterior">Mês Anterior</option>
+                        <option value="todos">Todos os Períodos</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- ==========================================
+                 ABA 1: PAINEL / DASHBOARD (BENTO GRID)
+                 ========================================== -->
+            <div id="aba-dashboard" class="tab-content active-tab">
+                <div class="bento-grid">
+                    
+                    <!-- Card: Entradas -->
+                    <div class="card">
+                        <div class="card-title">Receitas Estimadas</div>
+                        <div class="card-value text-emerald" id="card-entradas">R$ 0,00</div>
+                        <div class="card-subtext">Previsão bruta de entradas</div>
+                    </div>
+
+                    <!-- Card: Saídas -->
+                    <div class="card">
+                        <div class="card-title">Despesas Projetadas</div>
+                        <div class="card-value text-red" id="card-saidas">R$ 0,00</div>
+                        <div class="card-subtext">Previsão total de saídas</div>
+                    </div>
+
+                    <!-- Card: Saldo Real -->
+                    <div class="card">
+                        <div class="card-title">Saldo Efetivado</div>
+                        <div class="card-value text-menta" id="card-saldo">R$ 0,00</div>
+                        <div class="card-subtext">Dinheiro real em conta</div>
+                    </div>
+
+                    <!-- Card: Lucro Líquido Previsto -->
+                    <div class="card">
+                        <div class="card-title">Previsão Líquida</div>
+                        <div class="card-value" id="card-previsto">R$ 0,00</div>
+                        <div class="card-subtext">Sobra estimada no período</div>
+                    </div>
+
+                    <!-- Card Bento Expandido: Gráfico / Resumo Global -->
+                    <div class="card card-full">
+                        <div>
+                            <div class="card-title">Fluxo de Caixa Consolidado</div>
+                            <div class="card-value" style="font-size: 1.4rem; margin-top: 5px;">Seus dados e gráficos da Krauss entrarão aqui</div>
+                        </div>
+                        <div class="card-subtext">Atualizado em tempo real</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 ABA 2: LANÇAMENTOS (FORMULÁRIO + TABELA)
+                 ========================================== -->
+            <div id="aba-lancamentos" class="tab-content">
+                
+                <!-- Formulário de Entrada Manual -->
+                <div class="form-container">
+                    <h3>Novo Lançamento Manual</h3>
+                    <form id="form-lancamento" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <input type="text" id="ins-descricao" placeholder="Ex: Venda de produto">
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Bruto (R$)</label>
+                            <input type="number" step="0.01" id="ins-valor" placeholder="0,00">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="ins-tipo">
+                                <option value="receita">Receita</option>
+                                <option value="despesa">Despesa</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-enviar">Adicionar</button>
+                    </form>
+                </div>
+
+                <!-- Lista de Lançamentos Conectada ao Supabase -->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Tipo</th>
+                                <th>Origem</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" style="text-align:center;">Carregando seus lançamentos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 ABA 3: INTEGRAÇÕES (MERCADO LIVRE)
+                 ========================================== -->
+            <div id="aba-integracoes" class="tab-content">
+                <div class="placeholder-saas">
+                    <span style="font-size: 2.5rem;">🔌</span>
+                    <h3>Configuração da Conta Mercado Livre</h3>
+                    <p>Em breve, aqui você poderá monitorar os logs de vendas e sincronizar seus tokens de API para que os pagamentos caiam diretamente de forma automática.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==========================================
+         LÓGICA JAVASCRIPT DE INTEGRAÇÃO
+         ========================================== -->
+    <script>
+        // Atalho para o cliente do Supabase (Ajuste o nome da variável se no seu projeto for diferente de 'supabase')
+        const db = window.supabase || window.supabaseClient;
+
+        // 1. ALTERNAR ABAS DO MENU LATERAL
+        function mudarAba(abaId, elementoBotao) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active-tab');
+            });
+            document.querySelectorAll('.menu-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById('aba-' + abaId).classList.add('active-tab');
+            elementoBotao.classList.add('active');
+
+            const titulos = { 
+                'dashboard': 'Visão Geral', 
+                'lancamentos': 'Gerenciar Fluxo', 
+                'integracoes': 'Integrações de APIs' 
+            };
+            document.getElementById('titulo-pagina').innerText = titulos[abaId];
+            
+            // Recarrega sempre que transicionar entre as abas para manter sincronizado
+            carregarLancamentosReais();
+        }
+
+        // 2. FUNÇÃO DE LOGOFF REAL (ENCERRA SESSÃO NO SUPABASE)
+        async function fazerLogout() {
+            try {
+                if (db && db.auth) {
+                    await db.auth.signOut();
+                }
+                
+                // Limpa tokens antigos e dados de cache do navegador
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                alert('Sessão encerrada com sucesso!');
+                window.location.href = 'login.html'; // Altere para a sua página de login
+            } catch (error) {
+                console.error('Erro ao efetuar logoff:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // 3. BUSCAR LANÇAMENTOS DO SUPABASE E INJETAR NA TABELA
+        async function carregarLancamentosReais() {
+            const tbody = document.querySelector('.data-table tbody');
+            if (!tbody) return;
+
+            try {
+                if (!db) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#f87171;">Erro: Cliente Supabase não encontrado na janela global.</td></tr>';
+                    return;
+                }
+
+                // Faz a requisição na sua tabela do banco de dados
+                const { data: lancamentos, error } = await db
+                    .from('lancamentos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!lancamentos || lancamentos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum lançamento manual ou automático encontrado.</td></tr>';
+                    atualizarCardsBento(0, 0); // Zera o bento grid se estiver vazio
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                let totalEntradas = 0;
+                let totalSaidas = 0;
+
+                lancamentos.forEach(item => {
+                    const tr = document.createElement('tr');
+                    
+                    const classeCor = item.tipo === 'receita' ? 'text-emerald' : 'text-red';
+                    const classeBadge = item.tipo === 'receita' ? 'badge-success' : 'badge-danger';
+                    
+                    // Soma os totais para alimentar os cards do Bento Grid
+                    if (item.tipo === 'receita') {
+                        totalEntradas += parseFloat(item.valor || 0);
+                    } else {
+                        totalSaidas += parseFloat(item.valor || 0);
+                    }
+
+                    const valorFormatado = new Intl.NumberFormat('pt-BR', { 
+                        style: 'currency', 
+                        currency: 'BRL' 
+                    }).format(item.valor);
+
+                    tr.innerHTML = `
+                        <td>${item.descricao}</td>
+                        <td class="${classeCor}">${valorFormatado}</td>
+                        <td><span class="badge ${classeBadge}">${item.tipo}</span></td>
+                        <td>${item.origem_integracao || 'Manual'}</td>
+                        <td>
+                            <div class="actions-wrapper">
+                                ${item.status !== 'pago' ? `<button class="btn-efetivar" onclick="efetivarLancamento('${item.id}')">Efetivar</button>` : '✓ Efetivado'}
+                                <button class="btn-deletar" onclick="excluirLancamento('${item.id}')">Excluir</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Atualiza o painel principal com os cálculos dinâmicos reais
+                atualizarCardsBento(totalEntradas, totalSaidas);
+
+            } catch (error) {
+                console.error('Erro ao conectar ao Supabase:', error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#f87171;">Erro ao sincronizar dados com o banco.</td></tr>';
+            }
+        }
+
+        // 4. ATUALIZAR OS VALORES DO BENTO GRID DINAMICAMENTE
+        function atualizarCardsBento(entradas, saidas) {
+            const formatar = val => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+            
+            const saldoReal = entradas - saidas;
+
+            if(document.getElementById('card-entradas')) document.getElementById('card-entradas').innerText = formatar(entradas);
+            if(document.getElementById('card-saidas')) document.getElementById('card-saidas').innerText = formatar(saidas);
+            if(document.getElementById('card-saldo')) document.getElementById('card-saldo').innerText = formatar(saldoReal);
+            if(document.getElementById('card-previsto')) {
+                const cardPrevisto = document.getElementById('card-previsto');
+                cardPrevisto.innerText = formatar(saldoReal);
+                // Muda a cor do card previsto baseado no saldo líquido
+                cardPrevisto.className = saldoReal >= 0 ? 'card-value text-menta' : 'card-value text-red';
+            }
+        }
+
+        // Executa automaticamente assim que a página terminar de processar o HTML
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarLancamentosReais();
+        });
+    </script>
+</body>
+</html>
