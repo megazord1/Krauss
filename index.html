@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krauss - Sistema Financeiro</title>
+    <!-- Fonte Inter para um visual moderno e limpo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* ==========================================================================
+           ESTILOS ADICIONAIS PARA A TELA DE LOGIN INTEGRADA (NEXFLOW STYLE)
+           ========================================================================== */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100vw;
+            background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.12) 0%, #090d16 70%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+        }
+
+        .login-box {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .login-box .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .login-box input {
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .btn-login {
+            width: 100%;
+            height: 45px;
+            background: #10b981;
+            color: #064e3b;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-login:hover {
+            background: #059669;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Classes de Controle de Exibição */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         TELA DE LOGIN PREMIUM (ESTILO NEXFLOW)
+         ========================================== -->
+    <div id="tela-login" class="login-wrapper">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>Krauss<span class="dot-tech">.</span></h1>
+                <p>Entre com suas credenciais para acessar</p>
+            </div>
+            
+            <form id="form-autenticacao" onsubmit="efetuarLogin(event)">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="login-email" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="login-senha" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login">Acessar Painel</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         PAINEL PRINCIPAL (SÓ APARECE APÓS LOGAR)
+         ========================================== -->
+    <div id="painel-sistema" class="dashboard-wrapper hidden">
+        
+        <!-- MENU LATERAL PREMIUM -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                Krauss<span class="dot-tech">.</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <button class="menu-item active" onclick="mudarAba('dashboard', this)">
+                    <span class="menu-icon">📊</span> <span>Painel</span>
+                </button>
+                <button class="menu-item" onclick="mudarAba('lancamentos', this)">
+                    <span class="menu-icon">💸</span> <span>Lançamentos</span>
+                </button>
+                <button class="menu-item" onclick="mudarAba('integracoes', this)">
+                    <span class="menu-icon">🔌</span> <span>Integrações</span>
+                </button>
+            </nav>
+
+            <button class="btn-sair-sidebar" onclick="fazerLogout()">Sair</button>
+        </aside>
+
+        <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            
+            <header class="content-header">
+                <h2 id="titulo-pagina">Visão Geral</h2>
+                <div class="filtro-container">
+                    <select id="filtro-mes">
+                        <option value="atual">Mês Atual</option>
+                        <option value="anterior">Mês Anterior</option>
+                        <option value="todos">Todos os Períodos</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- ABA 1: DASHBOARD -->
+            <div id="aba-dashboard" class="tab-content active-tab">
+                <div class="bento-grid">
+                    <div class="card">
+                        <div class="card-title">Receitas Estimadas</div>
+                        <div class="card-value text-emerald" id="card-entradas">R$ 0,00</div>
+                        <div class="card-subtext">Previsão bruta de entradas</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Despesas Projetadas</div>
+                        <div class="card-value text-red" id="card-saidas">R$ 0,00</div>
+                        <div class="card-subtext">Previsão total de saídas</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Saldo Efetivado</div>
+                        <div class="card-value text-menta" id="card-saldo">R$ 0,00</div>
+                        <div class="card-subtext">Dinheiro real em conta</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Previsão Líquida</div>
+                        <div class="card-value" id="card-previsto">R$ 0,00</div>
+                        <div class="card-subtext">Sobra estimada no período</div>
+                    </div>
+                    <div class="card card-full">
+                        <div>
+                            <div class="card-title">Fluxo de Caixa Consolidado</div>
+                            <div class="card-value" style="font-size: 1.4rem; margin-top: 5px;">Seus dados e gráficos da Krauss entrarão aqui</div>
+                        </div>
+                        <div class="card-subtext">Atualizado em tempo real</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2: LANÇAMENTOS -->
+            <div id="aba-lancamentos" class="tab-content">
+                <div class="form-container">
+                    <h3>Novo Lançamento Manual</h3>
+                    <form id="form-lancamento" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <input type="text" id="ins-descricao" placeholder="Ex: Venda de produto">
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Bruto (R$)</label>
+                            <input type="number" step="0.01" id="ins-valor" placeholder="0,00">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="ins-tipo">
+                                <option value="receita">Receita</option>
+                                <option value="despesa">Despesa</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-enviar">Adicionar</button>
+                    </form>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Tipo</th>
+                                <th>Origem</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" style="text-align:center;">Carregando seus lançamentos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ABA 3: INTEGRAÇÕES -->
+            <div id="aba-integracoes" class="tab-content">
+                <div class="placeholder-saas">
+                    <span style="font-size: 2.5rem;">🔌</span>
+                    <h3>Configuração da Conta Mercado Livre</h3>
+                    <p>Em breve, aqui você poderá monitorar os logs de vendas e sincronizar seus tokens de API para que os pagamentos caiam diretamente de forma automática.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==========================================
+         LÓGICA JAVASCRIPT DE INTEGRAÇÃO
+         ========================================== -->
+    <script>
+        const db = window.supabase || window.supabaseClient;
+
+        // 1. FUNÇÃO DE LOGIN (CHAMA O SUPABASE)
+        async function efetuarLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const senha = document.getElementById('login-senha').value;
+
+            try {
+                if (!db) {
+                    alert('Erro: Supabase não inicializado.');
+                    return;
+                }
+
+                const { data, error } = await db.auth.signInWithPassword({
+                    email: email,
+                    password: senha,
+                });
+
+                if (error) throw error;
+
+                // Esconde a tela de login e exibe o painel do sistema
+                document.getElementById('tela-login').classList.add('hidden');
+                document.getElementById('painel-sistema').classList.remove('hidden');
+                
+                // Carrega os dados reais do banco
+                carregarLancamentosReais();
+
+            } catch (error) {
+                alert('Erro na autenticação: ' + error.message);
+            }
+        }
+
+        // 2. FUNÇÃO DE LOGOFF REAL (VOLTA PARA A TELA DE LOGIN COM FUNDO VERDE)
+        async function fazerLogout() {
+            try {
+                if (db && db.auth) {
+                    await db.auth.signOut();
+                }
+                
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                alert('Sessão encerrada com sucesso!');
+                
+                // Em vez de recarregar a página inteira, controlamos a exibição visual direto no DOM
+                document.getElementById('painel-sistema').classList.add('hidden');
+                document.getElementById('tela-login').classList.remove('hidden');
+                
+                // Limpa os campos do formulário de login por segurança
+                document.getElementById('form-autenticacao').reset();
+            } catch (error) {
+                console.error('Erro ao efetuar logoff:', error);
+                document.getElementById('painel-sistema').classList.add('hidden');
+                document.getElementById('tela-login').classList.remove('hidden');
+            }
+        }
+
+        // 3. ALTERNAR ABAS DO MENU LATERAL
+        function mudarAba(abaId, elementoBotao) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active-tab');
+            });
+            document.querySelectorAll('.menu-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById('aba-' + abaId).classList.add('active-tab');
+            elementoBotao.classList.add('active');
+
+            const titulos = { 'dashboard': 'Visão Geral', 'lancamentos': 'Gerenciar Fluxo', 'integracoes': 'Integrações de APIs' };
+            document.getElementById('titulo-pagina').innerText = titulos[abaId];
+            
+            carregarLancamentosReais();
+        }
+
+        // 4. BUSCAR LANÇAMENTOS DO SUPABASE
+        async function carregarLancamentosReais() {
+            const tbody = document.querySelector('.data-table tbody');
+            if (!tbody) return;
+
+            try {
+                if (!db) return;
+
+                const { data: lancamentos, error } = await db
+                    .from('lancamentos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!lancamentos || lancamentos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum lançamento encontrado.</td></tr>';
+                    atualizarCardsBento(0, 0);
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                let totalEntradas = 0;
+                let totalSaidas = 0;
+
+                lancamentos.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const classeCor = item.tipo === 'receita' ? 'text-emerald' : 'text-red';
+                    const classeBadge = item.tipo === 'receita' ? 'badge-success' : 'badge-danger';
+                    
+                    if (item.tipo === 'receita') totalEntradas += parseFloat(item.valor || 0);
+                    else totalSaidas += parseFloat(item.valor || 0);
+
+                    const valorFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor);
+
+                    tr.innerHTML = `
+                        <td>${item.descricao}</td>
+                        <td class="${classeCor}">${valorFormatado}</td>
+                        <td><span class="badge ${classeBadge}">${item.tipo}</span></td>
+                        <td>${item.origem_integracao || 'Manual'}</td>
+                        <td>
+                            <div class="actions-wrapper">
+                                ${item.status !== 'pago' ? `<button class="btn-efetivar" onclick="efetivarLancamento('${item.id}')">Efetivar</button>` : '✓ Efetivado'}
+                                <button class="btn-deletar" onclick="excluirLancamento('${item.id}')">Excluir</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                atualizarCardsBento(totalEntradas, totalSaidas);
+
+            } catch (error) {
+                console.error('Erro ao conectar ao Supabase:', error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#f87171;">Erro ao sincronizar dados.</td></tr>';
+            }
+        }
+
+        // 5. ATUALIZAR OS VALORES DO BENTO GRID
+        function atualizarCardsBento(entradas, saidas) {
+            const formatar = val => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+            const saldoReal = entradas - saidas;
+
+            if(document.getElementById('card-entradas')) document.getElementById('card-entradas').innerText = formatar(entradas);
+            if(document.getElementById('card-saidas')) document.getElementById('card-saidas').innerText = formatar(saidas);
+            if(document.getElementById('card-saldo')) document.getElementById('card-saldo').innerText = formatar(saldoReal);
+            if(document.getElementById('card-previsto')) {
+                const cardPrevisto = document.getElementById('card-previsto');
+                cardPrevisto.innerText = formatar(saldoReal);
+                cardPrevisto.className = saldoReal >= 0 ? 'card-value text-menta' : 'card-value text-red';
+            }
+        }
+
+        // VERIFICAÇÃO DE SESSÃO ATIVA AO CARREGAR A PÁGINA
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (db && db.auth) {
+                const { data: { session } } = await db.auth.getSession();
+                
+                // Se o usuário já tiver uma sessão ativa salva, pula a tela de login direto pro painel
+                if (session) {
+                    document.getElementById('tela-login').classList.add('hidden');
+                    document.getElementById('painel-sistema').classList.remove('hidden');
+                    carregarLancamentosReais();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
