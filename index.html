@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krauss Sistema</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <div class="app-container">
+        
+        <!-- HEADER COM BOTÃO DE SINCRONIZAÇÃO DA API -->
+        <header class="app-header">
+            <div class="logo-area">
+                <h1>KRAUSS</h1>
+                <span class="badge-status">Painel Pessoal</span>
+            </div>
+            
+            <div class="actions-area">
+                <!-- Botão de Sincronização do Mercado Livre -->
+                <button id="btn-sincronizar" class="btn-sync-api">
+                    <span id="txt-botao">🔄 Sincronizar Mercado Livre</span>
+                    <span id="loader-botao" class="loader-spinner hidden">Sincronizando...</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- BENTO GRID (MÉTRICAS) -->
+        <main class="bento-grid">
+            <div class="bento-item card-grande">
+                <h3>Faturamento Geral</h3>
+                <p class="valor-metrica" id="faturamento-total">R$ 0,00</p>
+            </div>
+            <div class="bento-item card-medio">
+                <h3>Vendas Realizadas</h3>
+                <p class="valor-metrica" id="total-vendas">0</p>
+            </div>
+            <div class="bento-item card-pequeno">
+                <h3>Última Sincronização</h3>
+                <p class="status-texto" id="data-sincronizacao">Nunca sincronizado</p>
+            </div>
+        </main>
+
+        <section class="content-section">
+            <!-- FORMULÁRIO DE LANÇAMENTO MANUAL LIMPO -->
+            <div class="form-container">
+                <h2>Novo Lançamento Manual</h2>
+                <form id="form-lancamento">
+                    <div class="form-group">
+                        <label for="descricao">Descrição</label>
+                        <input type="text" id="descricao" required placeholder="Ex: Conta de Luz, Venda balcão...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="valor">Valor (R$)</label>
+                        <input type="number" id="valor" step="0.01" required placeholder="0,00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipo">Tipo</label>
+                        <select id="tipo" required>
+                            <option value="receita">Receita</option>
+                            <option value="despesa">Despesa</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Salvar Lançamento</button>
+                </form>
+            </div>
+
+            <!-- TABELA DE FLUXO DE CAIXA -->
+            <div class="table-container">
+                <h2>Fluxo de Caixa / Lançamentos</h2>
+                <table id="tabela-lancamentos">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Origem</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                        <!-- Linhas inseridas dinamicamente pelo JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- BIBLIOTECA DO SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- TODO O JAVASCRIPT DO SEU SISTEMA INTEGRADO -->
+    <script>
+        // CONFIGURAÇÕES DO SUPABASE ATUALIZADAS COM AS SUAS CREDENCIAIS
+        const SUPABASE_URL = "https://wtdjttewnultbcjhmgst.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_Rgf3e5GambtmmyXYj_33_A_-yDKDrau";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // CONFIGURAÇÃO DA SUA EDGE FUNCTION
+        const URL_EDGE_FUNCTION_SYNC = `${SUPABASE_URL}/functions/v1/sincronizar-vendas`;
+
+        // ELEMENTOS DA DOM
+        const formLancamento = document.getElementById('form-lancamento');
+        const corpoTabela = document.getElementById('corpo-tabela');
+        const btnSincronizar = document.getElementById('btn-sincronizar');
+        const txtBotao = document.getElementById('txt-botao');
+        const loaderBotao = document.getElementById('loader-botao');
+
+        // ELEMENTOS DO BENTO GRID
+        const faturamentoTotalEl = document.getElementById('faturamento-total');
+        const totalVendasEl = document.getElementById('total-vendas');
+        const dataSincronizacaoEl = document.getElementById('data-sincronizacao');
+
+        // 1. FUNÇÃO PARA BUSCAR E RENDERIZAR OS DADOS NA TELA
+        async function renderizarSistema() {
+            try {
+                // Busca lançamentos ordenados pelos mais recentes
+                const { data: lancamentos, error } = await supabaseClient
+                    .from('lancamentos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Limpa a tabela antes de renderizar
+                corpoTabela.innerHTML = '';
+
+                let faturamentoAcumulado = 0;
+                let contagemVendas = 0;
+
+                // Preenche as linhas da tabela
+                lancamentos.forEach(item => {
+                    const dataFormatada = new Date(item.created_at).toLocaleDateString('pt-BR');
+                    const valorFormatado = item.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    
+                    // Cálculos para o Bento Grid
+                    if (item.tipo === 'receita') {
+                        faturamentoAcumulado += item.valor;
+                        contagemVendas++;
+                    } else if (item.tipo === 'despesa') {
+                        faturamentoAcumulado -= item.valor; // Deduz despesas do faturamento geral
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${dataFormatada}</td>
+                        <td>${item.descricao}</td>
+                        <td><span class="tag-origem ${item.origem_integracao === 'Mercado Livre' ? 'ml' : 'manual'}">${item.origem_integracao || 'Manual'}</span></td>
+                        <td><span class="tag-tipo ${item.tipo}">${item.tipo.toUpperCase()}</span></td>
+                        <td class="${item.tipo === 'receita' ? 'texto-receita' : 'texto-despesa'}">${valorFormatado}</td>
+                    `;
+                    corpoTabela.appendChild(tr);
+                });
+
+                // Atualiza os cards do Bento Grid
+                faturamentoTotalEl.textContent = faturamentoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                totalVendasEl.textContent = contagemVendas;
+
+            } catch (err) {
+                console.error("Erro ao carregar dados do Supabase:", err.message);
+            }
+        }
+
+        // 2. LOGICA DO BOTÃO "SINCRONIZAR MERCADO LIVRE" (EDGE FUNCTION)
+        btnSincronizar.addEventListener('click', async () => {
+            // Ativa animações de loading
+            txtBotao.classList.add('hidden');
+            loaderBotao.classList.remove('hidden');
+            btnSincronizar.disabled = true;
+
+            try {
+                // Dispara a Edge Function na nuvem do Supabase
+                const response = await fetch(URL_EDGE_FUNCTION_SYNC, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const dados = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(dados.error || 'Erro interno na sincronização.');
+                }
+
+                // Exibe feedback de sucesso e atualiza carimbo de hora
+                alert(dados.message);
+                const agora = new Date();
+                dataSincronizacaoEl.textContent = `Hoje às ${agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
+                
+                // Recarrega a tabela e o Bento Grid com as novas vendas inseridas
+                await renderizarSistema();
+
+            } catch (err) {
+                console.error("Falha na sincronização:", err);
+                alert("Erro ao sincronizar com Mercado Livre: " + err.message);
+            } finally {
+                // Restaura o estado original do botão
+                txtBotao.classList.remove('hidden');
+                loaderBotao.classList.add('hidden');
+                btnSincronizar.disabled = false;
+            }
+        });
+
+        // 3. ENVIO DO FORMULÁRIO MANUAL (LIMPO)
+        formLancamento.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const descricao = document.getElementById('descricao').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const tipo = document.getElementById('tipo').value;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('lancamentos')
+                    .insert([
+                        { 
+                            descricao: descricao, 
+                            valor: valor, 
+                            tipo: tipo, 
+                            origem_integracao: 'Manual' 
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                formLancamento.reset();
+                await renderizarSistema(); // Atualiza tudo na tela
+
+            } catch (err) {
+                alert("Erro ao salvar lançamento manual: " + err.message);
+            }
+        });
+
+        // INICIALIZAÇÃO AUTOMÁTICA AO ABRIR A PÁGINA
+        document.addEventListener('DOMContentLoaded', renderizarSistema);
+    </script>
+</body>
+</html>
